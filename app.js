@@ -1,6 +1,6 @@
 // ─── CONFIG — paste your Supabase credentials here ───────────────────────────
-const SUPABASE_URL     = 'https://YOUR_PROJECT.supabase.co'
-const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY'
+const SUPABASE_URL     = 'https://hlovkdposveawddwztnh.supabase.co'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhsb3ZrZHBvc3ZlYXdkZHd6dG5oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0OTk3NjYsImV4cCI6MjA5ODA3NTc2Nn0.tdhFbQJDKY2F5nvNwsvMsV5pEJ9Cm5JV4rbRBiMJ3o4'
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
