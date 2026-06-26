@@ -1,6 +1,6 @@
-// ─── CONFIG — paste your Supabase credentials here ───────────────────────────
-const SUPABASE_URL     = 'https://hlovkdposveawddwztnh.supabase.co'
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhsb3ZrZHBvc3ZlYXdkZHd6dG5oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0OTk3NjYsImV4cCI6MjA5ODA3NTc2Nn0.tdhFbQJDKY2F5nvNwsvMsV5pEJ9Cm5JV4rbRBiMJ3o4'
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+const SUPABASE_URL      = 'https://YOUR_PROJECT.supabase.co'
+const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY'
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
@@ -18,9 +18,9 @@ const STAGES = [
 ]
 
 // ─── STATE ────────────────────────────────────────────────────────────────────
-let leads       = []
-let dragLeadId  = null
-let openLeadId  = null
+let leads      = []
+let dragLeadId = null
+let openLeadId = null
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 sb.auth.getSession().then(({ data: { session } }) => {
@@ -41,28 +41,47 @@ function showAuth() {
         <p class="auth-sub">Track every lead in one place.</p>
         <p id="auth-error" class="error-msg" style="display:none"></p>
         <input id="auth-email" type="email" placeholder="Email" />
-        <input id="auth-pass"  type="password" placeholder="Password" />
-        <button class="btn btn-primary" onclick="doAuth('login')">Sign In</button>
-        <p class="auth-toggle">
-          No account? <button class="link-btn" onclick="doAuth('signup')">Sign up</button>
-        </p>
+        <input id="auth-pass" type="password" placeholder="Password" />
+        <button class="btn btn-primary" onclick="signIn()">Sign In</button>
+        <button class="btn btn-ghost" onclick="signUp()">Sign Up</button>
       </div>
     </div>`
 }
 
-async function doAuth(mode) {
+async function signIn() {
   const email = document.getElementById('auth-email').value.trim()
   const pass  = document.getElementById('auth-pass').value
   const errEl = document.getElementById('auth-error')
   errEl.style.display = 'none'
+
   if (!email || !pass) { showErr(errEl, 'Fill in email and password.'); return }
 
-  const fn = mode === 'login'
-    ? sb.auth.signInWithPassword({ email, password: pass })
-    : sb.auth.signUp({ email, password: pass })
-
-  const { error } = await fn
+  const { error } = await sb.auth.signInWithPassword({ email, password: pass })
   if (error) showErr(errEl, error.message)
+}
+
+async function signUp() {
+  const email = document.getElementById('auth-email').value.trim()
+  const pass  = document.getElementById('auth-pass').value
+  const errEl = document.getElementById('auth-error')
+  errEl.style.display = 'none'
+
+  if (!email || !pass) { showErr(errEl, 'Fill in email and password.'); return }
+  if (pass.length < 6) { showErr(errEl, 'Password must be at least 6 characters.'); return }
+
+  const { error } = await sb.auth.signUp({ email, password: pass })
+  if (error) {
+    showErr(errEl, error.message)
+  } else {
+    errEl.style.display = 'block'
+    errEl.style.background = 'rgba(16,185,129,0.1)'
+    errEl.style.color = '#10b981'
+    errEl.textContent = '✅ Account created! Now click Sign In.'
+  }
+}
+
+async function signOut() {
+  await sb.auth.signOut()
 }
 
 // ─── APP SHELL ────────────────────────────────────────────────────────────────
@@ -84,21 +103,15 @@ async function showApp() {
       </div>
     </div>
 
-    <!-- Lead Drawer -->
     <div class="overlay" id="drawer-overlay" onclick="closeDrawer(event)">
       <div class="drawer" id="drawer"></div>
     </div>
 
-    <!-- Add Lead Modal -->
     <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
       <div class="modal" id="modal"></div>
     </div>`
 
   await loadLeads()
-}
-
-async function signOut() {
-  await sb.auth.signOut()
 }
 
 // ─── DATA ─────────────────────────────────────────────────────────────────────
@@ -139,7 +152,7 @@ function renderBoard() {
   const board = document.getElementById('board')
   if (!board) return
   board.innerHTML = STAGES.map(s => {
-    const col = leads.filter(l => l.stage === s.id)
+    const col   = leads.filter(l => l.stage === s.id)
     const total = col.reduce((sum, l) => sum + (l.value || 0), 0)
     return `
       <div class="column"
@@ -188,7 +201,7 @@ function cardHTML(l) {
 function renderStats() {
   const el = document.getElementById('stats')
   if (!el) return
-  const won = leads.filter(l => l.stage === 'won').reduce((s, l) => s + (l.value || 0), 0)
+  const won    = leads.filter(l => l.stage === 'won').reduce((s, l) => s + (l.value || 0), 0)
   const active = leads.filter(l => !['won','lost'].includes(l.stage)).length
   el.innerHTML = `
     <span class="stat"><b>${leads.length}</b> leads</span>
@@ -219,7 +232,7 @@ async function onDrop(e, stageId) {
   const lead = leads.find(l => l.id === dragLeadId)
   if (!lead || lead.stage === stageId) return
   await updateLead(dragLeadId, { stage: stageId })
-  await addActivity(dragLeadId, 'stage_change', `Moved to ${STAGES.find(s=>s.id===stageId)?.label}`)
+  await addActivity(dragLeadId, 'stage_change', `Moved to ${STAGES.find(s => s.id === stageId)?.label}`)
   dragLeadId = null
 }
 
@@ -252,10 +265,10 @@ async function openDrawer(id) {
 
     <div class="drawer-section">
       <label class="field-label">Details</label>
-      <div class="field-row">✉️ <input id="d-email" value="${esc(lead.email||'')}" placeholder="Email" /></div>
-      <div class="field-row">📞 <input id="d-phone" value="${esc(lead.phone||'')}" placeholder="Phone" /></div>
+      <div class="field-row">✉️ <input id="d-email"   value="${esc(lead.email||'')}"   placeholder="Email" /></div>
+      <div class="field-row">📞 <input id="d-phone"   value="${esc(lead.phone||'')}"   placeholder="Phone" /></div>
       <div class="field-row">🏢 <input id="d-company" value="${esc(lead.company||'')}" placeholder="Company" /></div>
-      <div class="field-row">💰 <input id="d-value" type="number" value="${lead.value||0}" placeholder="Value" /></div>
+      <div class="field-row">💰 <input id="d-value"   value="${lead.value||0}" type="number" placeholder="Value" /></div>
       <div class="field-row" style="align-items:flex-start">
         📝 <textarea id="d-notes" rows="3" placeholder="Notes">${esc(lead.notes||'')}</textarea>
       </div>
@@ -271,7 +284,7 @@ async function openDrawer(id) {
     <div class="drawer-section">
       <label class="field-label">Timeline</label>
       <ul class="timeline">
-        ${(acts || []).length === 0
+        ${(acts||[]).length === 0
           ? '<li style="color:var(--muted);font-size:12px">No activity yet.</li>'
           : (acts||[]).map(a => `
             <li class="tl-item">
@@ -296,7 +309,7 @@ function closeDrawer(e) {
 async function saveStage(id) {
   const stage = document.getElementById('d-stage').value
   await updateLead(id, { stage })
-  await addActivity(id, 'stage_change', `Moved to ${STAGES.find(s=>s.id===stage)?.label}`)
+  await addActivity(id, 'stage_change', `Moved to ${STAGES.find(s => s.id === stage)?.label}`)
 }
 
 async function saveDetails(id) {
@@ -373,7 +386,7 @@ function closeModal(e) {
 }
 
 async function submitLead() {
-  const name = document.getElementById('m-name').value.trim()
+  const name  = document.getElementById('m-name').value.trim()
   const errEl = document.getElementById('modal-error')
   if (!name) { showErr(errEl, 'Name is required'); return }
 
@@ -411,7 +424,7 @@ function confirmDelete(id, btn) {
     btn.dataset.confirming = '1'
     btn.textContent = '?'
     btn.style.color = 'var(--danger)'
-    setTimeout(() => { btn.dataset.confirming = ''; btn.textContent = '✕'; btn.style.color = ''; }, 2500)
+    setTimeout(() => { btn.dataset.confirming = ''; btn.textContent = '✕'; btn.style.color = '' }, 2500)
   }
 }
 
